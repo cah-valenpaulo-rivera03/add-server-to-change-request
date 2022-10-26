@@ -2,7 +2,7 @@
 import sys
 
 from modules import configparser
-from modules.generatecsv import Linux
+from modules.generatecsv import Linux, Windows
 from modules.patchtuesday import get_patch_cycle
 
 class AddServerToChangeRequestController:
@@ -66,8 +66,8 @@ class AddServerToChangeRequestController:
             linux_collector = Linux(self.os_type, self.change_request, self.patch_cycle)
             linux_collector.run()
         elif self.os_type == "Windows":
-            # Windows class
-            pass
+            windows_collector = Windows(self.os_type, self.change_request, self.patch_cycle)
+            windows_collector.run()
         else:
             print("Invalid OS: %s" % self.os_type)
             sys.exit()
