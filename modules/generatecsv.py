@@ -161,6 +161,9 @@ class Windows:
         filter_index = None
         
         for header in active_workbook.iter_cols(min_row=1, max_row=1, values_only=True):
+            if header[0] is None:
+                continue
+
             if header[0].lower() == "Computer Name".lower():
                 cn_index = index
             elif header[0].lower() == "CAH - Patch Tags".lower():

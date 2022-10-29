@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import sys
 
-from modules import configparser
+from config.settings import *
+
 from modules.generatecsv import Linux, Windows
 from modules.patchtuesday import get_patch_cycle
 
@@ -27,10 +28,10 @@ class AddServerToChangeRequestController:
             sys.exit(0)
 
     def get_os_type(self):
-        os_type = configparser.get_config("os_info", "OS_TYPE")
+        os_type = OS_TYPE
         if os_type == "":
-            os_type = self.set_os_type()
-            os_type = configparser.get_config("os_info", "OS_TYPE")
+            self.set_os_type()
+            os_type = OS_TYPE
 
         return os_type
             
@@ -59,7 +60,7 @@ class AddServerToChangeRequestController:
             sys.exit()
 
         os_type = os_option[os_index]
-        configparser.set_config("os_info", "OS_TYPE", os_type)
+        set_env_variable("OS_TYPE", os_type)
 
     def run(self):
         if self.os_type == "Linux":
