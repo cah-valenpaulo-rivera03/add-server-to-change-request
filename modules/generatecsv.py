@@ -126,7 +126,7 @@ class Windows:
         sharepoint_api = Sharepoint365()
 
         # get compliance tracker to be downloaded
-        source_directory = "{SHAREPOINT_DOC_URL}/{self.patch_cycle}"
+        source_directory = "%s/%s" % (SHAREPOINT_DOC_URL, self.patch_cycle)
         files = sharepoint_api.list_files(source_directory)
         file_name = None
 
@@ -143,11 +143,11 @@ class Windows:
     def get_active_spreadsheet(self):
         file_name = self.download_compliance_tracker()
         workbook = openpyxl.load_workbook(file_name)
-        question = "{workbook} Spreadsheets:\n"
+        question = "%s Spreadsheets:\n" % workbook
         sheet_id = 1
         
         for sheetname in workbook.sheetnames:
-            question += "{sheet_id} - {sheetname}\n"
+            question += "%s - %s\n" % (sheet_id, sheetname)
             sheet_id += 1
 
         question += "\nChoose Spreadsheets: "
@@ -181,7 +181,7 @@ class Windows:
         cp_index = None
         filter_index = None
         
-        for header in active_workbook.iter_cols(min_row=1, max_row=1, values_only=True):
+        for header in spreadsheet.iter_cols(min_row=1, max_row=1, values_only=True):
             if header[0] is None:
                 continue
 
@@ -207,7 +207,7 @@ class Windows:
             if details[filter_index].lower() != "compliant":
                 continue
             
-            patch_list_name = "{self.patch_cycle} Compliance Patch List"
+            patch_list_name = "%s Compliance Patch List" % self.patch_cycle
             self.server_details.append([
                     details[cn_index],
                     patch_list_name,
@@ -224,7 +224,7 @@ class Windows:
     def generate_csv(self):
         now = datetime.now()
         date_time = now.strftime("%Y%m%dT%H%M%S")
-        csv_file_name = '{self.change_request} - Compliance Report-{date_time}.csv'
+        csv_file_name = '%s - Compliance Report-%s.csv' % (self.change_request, date_time)
         header = [
             "Computer Name",
             "Patch List Name",
