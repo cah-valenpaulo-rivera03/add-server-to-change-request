@@ -8,7 +8,10 @@ import openpyxl
 
 from datetime import datetime
 
+from config.settings import *
+
 from modules.garbagecollector import cleanup
+from modules.sharepoint365 import Sharepoint365
 
 
 class Linux:
@@ -44,7 +47,7 @@ class Linux:
                             self.change_request
                         ])
 
-    def create_csv_out(self):
+    def generate_csv(self):
         now = datetime.now()
         date_time = now.strftime("%Y%m%dT%H%M%S")
         csv_file_name = '%s - Compliance Report-%s.csv' % (self.change_request, date_time)
@@ -78,7 +81,7 @@ class Linux:
     def run(self):
         self.get_server_data()
         cleanup(self.change_request)
-        self.create_csv_out()
+        self.generate_csv()
 
 
 class Windows:
@@ -86,8 +89,7 @@ class Windows:
         self.server_details = []
         self.os_type = os_type
         self.change_request = change_request
-        self.patch_list_name = "%s Compliance Patch List" % patch_cycle
-        self.compliance_tracker = self.get_compliance_tracker()
+        self.patch_cycle = patch_cycle
 
     def ask_question(self, question):
         answer = input(question)
@@ -120,17 +122,36 @@ class Windows:
 
         return workbooks[answer]
 
-    def get_active_workbook(self):
-        wb = openpyxl.load_workbook(self.compliance_tracker)
+    def download_compliance_tracker(self):
+        sharepoint_api = Sharepoint365()
 
-        question = "%s Sheet Names:\n" % (self.compliance_tracker)
-        sheetname_id = 1
-        for sheetname in wb.sheetnames:
-            question += "(%s) - %s\n" % (sheetname_id, sheetname)
-            sheetname_id += 1
+        # get compliance tracker to be downloaded
+        source_directory = "{SHAREPOINT_DOC_URL}/{self.patch_cycle}"
+        files = sharepoint_api.list_files(source_directory)
+        file_name = None
 
-        question += "\nChoose Sheet Name: "
+        for file in files:
+            if "compliance tracker" in file.name.lower():
+                file_name = file.name
+                break
 
+        # download target file
+        sharepoint_api.download_file(source_directory, file_name)
+
+        return file_name
+
+    def get_active_spreadsheet(self):
+        file_name = self.download_compliance_tracker()
+        workbook = openpyxl.load_workbook(file_name)
+        question = "{workbook} Spreadsheets:\n"
+        sheet_id = 1
+        
+        for sheetname in workbook.sheetnames:
+            question += "{sheet_id} - {sheetname}\n"
+            sheet_id += 1
+
+        question += "\nChoose Spreadsheets: "
+        
         answer = self.ask_question(question)
 
         try:
@@ -143,15 +164,15 @@ class Windows:
             print("Not a valid option")
             sys.exit()
 
-        if answer >= len(wb.sheetnames):
+        if answer >= len(workbook.sheetnames):
             print("Not a valid option")
             sys.exit()
 
-        return wb[wb.sheetnames[answer]]
+        return workbook[workbook.sheetnames[answer]]
 
     def get_server_data(self):
         # get sheetname
-        active_workbook = self.get_active_workbook()
+        spreadsheet = self.get_active_spreadsheet()
         index = 0
         cn_index = None
         cpt_index = None
@@ -179,16 +200,17 @@ class Windows:
 
             index += 1
         
-        for details in active_workbook.iter_rows(min_row=2, values_only=True):
+        for details in spreadsheet.iter_rows(min_row=2, values_only=True):
             if all(elem is None for elem in details):
                 continue
 
             if details[filter_index].lower() != "compliant":
                 continue
-
+            
+            patch_list_name = "{self.patch_cycle} Compliance Patch List"
             self.server_details.append([
                     details[cn_index],
-                    self.patch_list_name,
+                    patch_list_name,
                     "Compliant",
                     self.os_type,
                     details[cpt_index],
@@ -199,10 +221,10 @@ class Windows:
                     self.change_request
                 ])
 
-    def create_csv_out(self):
+    def generate_csv(self):
         now = datetime.now()
         date_time = now.strftime("%Y%m%dT%H%M%S")
-        csv_file_name = '%s - Compliance Report-%s.csv' % (self.change_request, date_time)
+        csv_file_name = '{self.change_request} - Compliance Report-{date_time}.csv'
         header = [
             "Computer Name",
             "Patch List Name",
@@ -232,5 +254,5 @@ class Windows:
 
     def run(self):
         self.get_server_data()
-        self.create_csv_out()
+        self.generate_csv()
         
