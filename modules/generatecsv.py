@@ -195,7 +195,7 @@ class Windows:
                 os_index = index
             elif header[0].lower() == "Cloud Provider - CAH".lower():
                 cp_index = index
-            elif "sensor" in header[0].lower():
+            elif "kb sensor" in header[0].lower():
                 filter_index = index
 
             index += 1
