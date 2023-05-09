@@ -131,7 +131,7 @@ class Windows:
         file_name = None
 
         for file in files:
-            if "compliance tracker" in file.name.lower():
+            if "raw compliance data" in file.name.lower():
                 file_name = file.name
                 break
 
